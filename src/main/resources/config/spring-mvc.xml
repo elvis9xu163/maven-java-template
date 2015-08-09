@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+  xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:util="http://www.springframework.org/schema/util"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.1.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd
+    http://www.springframework.org/schema/util
+    http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+
+  <!-- 开启mvc注解支持 -->
+  <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter" />
+  <mvc:annotation-driven>
+    <mvc:message-converters>
+      <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+        <constructor-arg value="UTF-8" /> <!-- 支持中文, 此处使用了CharsetEditor把String转换成了Charset -->
+      </bean>
+    </mvc:message-converters>
+  </mvc:annotation-driven>
+
+  <!-- 国际化的消息资源文件 -->
+  <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+    <property name="basenames">
+      <list>
+        <!-- 在web环境中一定要定位到classpath 否则默认到当前web应用下找 -->
+        <value>classpath:i18n/messages</value>
+        <value>classpath:i18n/result_codes</value>
+      </list>
+    </property>
+    <property name="defaultEncoding" value="UTF-8" />
+    <!-- 以下属性仅在debug时使用, 生产环境中匆使用 -->
+    <!-- <property name="useCodeAsDefaultMessage" value="true" />
+    <property name="cacheSeconds" value="60" /> -->
+  </bean>
+  <bean id="messageSourceAccessor" class="org.springframework.context.support.MessageSourceAccessor">
+    <constructor-arg>
+      <ref bean="messageSource" />
+    </constructor-arg>
+  </bean>
+
+  <bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver" />
+  <mvc:interceptors>
+    <!-- <bean class="com.chinapnr.trs.web.spring.TimeInterceptor"/> -->
+    <!-- 国际化Locale拦截器 -->
+    <bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor" />
+    <!-- <bean class="com.xjd.note.web.locale.LocaleContextChangeInterceptor" /> -->
+
+    <!-- Auth拦截器 -->
+    <!-- <bean class="com.xjd.note.web.auth.AuthInterceptor" /> -->
+  </mvc:interceptors>
+
+  <!-- 扫描注解类 -->
+  <context:component-scan base-package="com.xjd.integrated.nice.web, com.xjd.integrated.nice.app" />
+
+  <!-- 映射静态资源 -->
+  <mvc:resources mapping="/js/**" location="/js/" />
+  <mvc:resources mapping="/fonts/**" location="/fonts/" />
+  <mvc:resources mapping="/css/**" location="/css/" />
+  <mvc:resources mapping="/assets/**" location="/assets/" />
+
+  <!-- 默认访问index -->
+  <mvc:view-controller path="/" view-name="redirect:/index" />
+
+  <!-- 视图解析 -->
+  <bean id="defaultViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver" p:order="2">
+    <property name="prefix" value="/WEB-INF/page" />
+    <property name="suffix" value=".jsp" />
+  </bean>
+
+  <!-- 文件上传 -->
+  <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+    <property name="maxUploadSize" value="500000000" />
+  </bean>
+
+  <!-- 控制器异常处理 -->
+  <bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+    <property name="exceptionMappings">
+      <props>
+        <prop key="java.lang.Exception">/error_all</prop>
+        <prop key="java.lang.RuntimeException">forward:/error</prop>
+      </props>
+    </property>
+  </bean>
+
+</beans>
